@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개인 영화 티어리스트 (2000~2026)</title>
+  <!-- html2canvas Library for capturing tier board -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --card-border: #333;
+      --accent-color: #e50914;
+      --text-main: #f5f5f5;
+      --text-muted: #aaaaaa;
+      --tier-s: #ff7f7f;
+      --tier-a: #ffbf7f;
+      --tier-b: #ffff7f;
+      --tier-c: #7fff7f;
+      --tier-d: #7fbfff;
+      --tier-f: #bf7fff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #2a2a2a;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls-top {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    select, button, input {
+      background-color: #252525;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:hover, button:hover {
+      background-color: #333;
+      border-color: #666;
+      cursor: pointer;
+    }
+
+    button.btn-primary {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    button.btn-primary:hover {
+      background-color: #b80710;
+    }
+
+    /* main layout */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    /* Board Capture Area */
+    #capture-area {
+      background-color: #121212;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #222;
+    }
+
+    .board-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #333;
+    }
+
+    .board-title-input {
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: transparent;
+      border: none;
+      color: #fff;
+      border-bottom: 1px solid transparent;
+    }
+    .board-title-input:focus {
+      border-bottom: 1px solid var(--accent-color);
+    }
+
+    .board-date {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Tier Rows */
+    .tier-board {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tier-row {
+      display: flex;
+      min-height: 110px;
+      background-color: #1a1a1a;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #282828;
+    }
+
+    .tier-label {
+      width: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #111;
+      text-align: center;
+      padding: 10px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .tier-label.t-life { background-color: var(--tier-s); }
+    .tier-label.t-rec { background-color: var(--tier-a); }
+    .tier-label.t-avg { background-color: var(--tier-b); }
+    .tier-label.t-sad { background-color: var(--tier-c); }
+    .tier-label.t-poor { background-color: var(--tier-d); }
+    .tier-label.t-worst { background-color: var(--tier-f); }
+
+    .tier-content {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+      align-items: center;
+      min-height: 110px;
+      background-color: rgba(255,255,255,0.02);
+      transition: background-color 0.2s;
+    }
+
+    .tier-content.drag-over {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Unclassified Storage */
+    .unclassified-section {
+      background-color: #1a1a1a;
+      border-radius: 8px;
+      padding: 15px;
+      border: 1px solid #282828;
+    }
+
+    .unclassified-title {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Movie Card */
+    .movie-card {
+      width: 75px;
+      height: 105px;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+      background-color: #2a2a2a;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .movie-card:active {
+      cursor: grabbing;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+    }
+
+    .movie-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    .movie-card .card-info-badge {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.9));
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 12px 4px 4px 4px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    .movie-card .rating-stars {
+      color: #ffd700;
+      font-size: 0.65rem;
+    }
+
+    /* Card Order Controls overlay on hover */
+    .card-actions {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .movie-card:hover .card-actions {
+      opacity: 1;
+    }
+
+    .btn-mini {
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      width: 18px;
+      height: 18px;
+      font-size: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .btn-mini:hover {
+      background: var(--accent-color);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background-color: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 5px;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* API Key Banner / Search Box */
+    .api-search-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .search-results {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      border-radius: 5px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .search-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+    }
+
+    .search-item:hover {
+      background: #333;
+    }
+
+    .search-item img {
+      width: 35px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 3px;
+    }
+
+    .search-item-info {
+      font-size: 0.85rem;
+    }
+
+    /* Guide text */
+    .guide-text {
+      font-size: 0.75rem;
+      color: #888;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 600px) {
+      .tier-label {
+        width: 80px;
+        font-size: 0.9rem;
+      }
+      .movie-card {
+        width: 60px;
+        height: 85px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎬 영화 티어리스트</h1>
+    <div class="controls-top">
+      <label for="year-select" style="font-size:0.9rem; color:#aaa;">대상 연도:</label>
+      <select id="year-select"></select>
+
+      <button id="btn-add-movie" class="btn-primary">+ 영화 추가</button>
+      <button id="btn-api-key">🔑 TMDB API 설정</button>
+      <button id="btn-export-img">📸 이미지 저장</button>
+      <button id="btn-reset" style="color: #ff6b6b; border-color: #552222;">초기화</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Capture Board Area -->
+    <div id="capture-area">
+      <div class="board-header">
+        <input type="text" id="board-title" class="board-title-input" value="2026년 영화 명작 티어리스트">
+        <div class="board-date" id="board-date">작성일: 2026-11-09</div>
+      </div>
+
+      <div class="tier-board" id="tier-board">
+        <div class="tier-row" data-tier="인생작">
+          <div class="tier-label t-life">인생작</div>
+          <div class="tier-content"></div>
+        </div>
+        <div class="tier-row" data-tier="추천">
+          <div class="tier-label t-rec">추천</div>
+          <div class="tier-content"></div>
+        </div>
+        <div class="tier-row" data-tier="평작">
+          <div class="tier-label t-avg">평작</div>
+          <div class="tier-content"></div>
+        </div>
+        <div class="tier-row" data-tier="아쉬움">
+          <div class="tier-label t-sad">아쉬움</div>
+          <div class="tier-content"></div>
+        </div>
+        <div class="tier-row" data-tier="미흡">
+          <div class="tier-label t-poor">미흡</div>
+          <div class="tier-content"></div>
+        </div>
+        <div class="tier-row" data-tier="최악">
+          <div class="tier-label t-worst">최악</div>
+          <div class="tier-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unclassified Area -->
+    <div class="unclassified-section">
+      <div class="unclassified-title">
+        <span>📦 미분류 영화 보관함</span>
+        <span style="font-size:0.8rem; color:#777;">(카드를 원하는 등급으로 드래그하거나 위치 이동 버튼을 클릭하세요)</span>
+      </div>
+      <div class="tier-content" id="unclassified-content"></div>
+    </div>
+  </div>
+
+  <!-- Movie Detail / Edit Modal -->
+  <div class="modal-overlay" id="movie-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-heading">영화 정보 편집</div>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+
+      <!-- TMDB Search Section (Only visible when adding) -->
+      <div id="tmdb-search-container" style="margin-bottom:15px;">
+        <label style="font-size:0.85rem; color:#aaa; margin-bottom:4px; display:block;">자동 검색 (TMDB API 연동)</label>
+        <div class="api-search-box">
+          <input type="text" id="api-search-query" placeholder="영화 제목 검색 (예: 파묘, 듄)">
+          <button type="button" id="btn-search-tmdb">검색</button>
+        </div>
+        <div class="search-results" id="search-results"></div>
+      </div>
+
+      <form id="movie-form">
+        <input type="hidden" id="movie-id">
+        <div class="form-group">
+          <label for="form-title">영화 제목 *</label>
+          <input type="text" id="form-title" required>
+        </div>
+        <div class="form-group">
+          <label for="form-year">개봉 연도</label>
+          <input type="number" id="form-year" min="1900" max="2100">
+        </div>
+        <div class="form-group">
+          <label for="form-director">감독</label>
+          <input type="text" id="form-director">
+        </div>
+        <div class="form-group">
+          <label for="form-poster">포스터 이미지 URL</label>
+          <input type="url" id="form-poster" placeholder="https://example.com/poster.jpg">
+        </div>
+        <div class="form-group">
+          <label for="form-rating">개인 평점 (0 ~ 5)</label>
+          <input type="number" id="form-rating" min="0" max="5" step="0.5" value="4.5">
+        </div>
+        <div class="form-group">
+          <label for="form-date">관람일</label>
+          <input type="date" id="form-date">
+        </div>
+        <div class="form-group">
+          <label for="form-review">한 줄 평</label>
+          <textarea id="form-review" placeholder="영화에 대한 짧은 평을 입력하세요"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-delete-movie" style="color:#ff6b6b; background:transparent; border:none; margin-right:auto; display:none;">삭제</button>
+          <button type="button" id="btn-modal-cancel">취소</button>
+          <button type="submit" class="btn-primary">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- API Key Config Modal -->
+  <div class="modal-overlay" id="api-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">TMDB API Key 설정 안내</div>
+        <button class="modal-close" id="api-modal-close">&times;</button>
+      </div>
+      <div style="font-size:0.9rem; line-height:1.6; color:#ccc;">
+        <p>TMDB(The Movie Database) API Key를 입력하시면 영화 검색 및 포스터/감독 정보 자동 불러오기를 사용하실 수 있습니다.</p>
+        <br>
+        <div class="form-group">
+          <label for="input-api-key">TMDB API Key (v3 auth)</label>
+          <input type="text" id="input-api-key" placeholder="API Key 입력">
+        </div>
+        <div class="guide-text">
+          📌 <strong>발급 방법:</strong><br>
+          1. <a href="https://www.themoviedb.org/" target="_blank" style="color:var(--accent-color);">themoviedb.org</a> 회원가입 및 로그인<br>
+          2. 계정 설정 > API 메뉴 이동 후 API Key (v3 auth) 신청 발급<br>
+          3. 발급받은 Key를 위 칸에 붙여넣고 저장하세요. (브라우저에 안전하게 보관됩니다)
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-save-api-key" class="btn-primary">API Key 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initial Movie Database (2000 ~ 2026)
+    const SAMPLE_MOVIES = [
+      // 2026
+      { id: 'm2026-1', targetYear: 2026, title: '오디세이', releaseYear: 2026, director: '크리스토퍼 놀란', posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300', rating: 4.5, review: '압도적인 연출과 웅장한 스케일의 걸작', watchDate: '2026-03-15', tier: '인생작' },
+      { id: 'm2026-2', targetYear: 2026, title: '프로젝트 헤일메리', releaseYear: 2026, director: '드류 고다드', posterUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300', rating: 4.8, review: '원작을 완벽하게 계승한 우주 SF SF 감동작', watchDate: '2026-05-10', tier: '추천' },
+      { id: 'm2026-3', targetYear: 2026, title: '어벤져스: 도둠스데이', releaseYear: 2026, director: '루소 형제', posterUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=300', rating: 4.0, review: '도박과 같은 시도, 훌륭한 볼거리', watchDate: '2026-07-01', tier: '평작' },
+      
+      // 2025
+      { id: 'm2025-1', targetYear: 2025, title: '미키 17', releaseYear: 2025, director: '봉준호', posterUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=300', rating: 4.7, review: '봉준호 특유의 위트와 블랙코미디의 정수', watchDate: '2025-02-28', tier: '인생작' },
+      { id: 'm2025-2', targetYear: 2025, title: '아바타: 불과 재', releaseYear: 2025, director: '제임스 카메론', posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300', rating: 4.5, review: '비주얼 혁신의 끝을 보여준 작품', watchDate: '2025-12-20', tier: '추천' },
+      
+      // 2024
+      { id: 'm2024-1', targetYear: 2024, title: '파묘', releaseYear: 2024, director: '장재현', posterUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300', rating: 4.5, review: 'K-오컬트의 새로운 지평을 열다', watchDate: '2024-03-01', tier: '인생작' },
+      { id: 'm2024-2', targetYear: 2024, title: '듄: 파트 2', releaseYear: 2024, director: '드니 빌뇌브', posterUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300', rating: 5.0, review: '영화관에서 봐야 할 사막의 대서사시', watchDate: '2024-03-10', tier: '인생작' },
+      { id: 'm2024-3', targetYear: 2024, title: '인사이드 아웃 2', releaseYear: 2024, director: '켈시 만', posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300', rating: 4.2, review: '불안이를 통해 얻은 진정한 위로', watchDate: '2024-06-18', tier: '추천' },
+      { id: 'm2024-4', targetYear: 2024, title: '범죄도시 4', releaseYear: 2024, director: '허명행', posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300', rating: 3.5, review: '통쾌하지만 아쉬운 데자뷔', watchDate: '2024-04-25', tier: '평작' },
+
+      // 2023
+      { id: 'm2023-1', targetYear: 2023, title: '오펜하이머', releaseYear: 2023, director: '크리스토퍼 놀란', posterUrl: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=300', rating: 5.0, review: '전기와 경악, 시네마의 완벽한 경지', watchDate: '2023-08-15', tier: '인생작' },
+      { id: 'm2023-2', targetYear: 2023, title: '서울의 봄', releaseYear: 2023, director: '김성수', posterUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300', rating: 4.8, review: '숨막히는 9시간의 연출력', watchDate: '2023-11-22', tier: '추천' },
+
+      // 2019
+      { id: 'm2019-1', targetYear: 2019, title: '기생충', releaseYear: 2019, director: '봉준호', posterUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300', rating: 5.0, review: '한국 영화사의 정점이자 세계적 명작', watchDate: '2019-05-30', tier: '인생작' },
+
+      // 2014
+      { id: 'm2014-1', targetYear: 2014, title: '인터스텔라', releaseYear: 2014, director: '크리스토퍼 놀란', posterUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300', rating: 5.0, review: '사랑과 시공간을 초월한 우주 서사시', watchDate: '2014-11-07', tier: '인생작' }
+    ];
+
+    // State Variables
+    let currentYear = 2026;
+    let movies = [];
+    let tmdbApiKey = '';
+
+    // DOM Elements
+    const yearSelect = document.getElementById('year-select');
+    const boardTitle = document.getElementById('board-title');
+    const boardDate = document.getElementById('board-date');
+    const tierBoard = document.getElementById('tier-board');
+    const unclassifiedContent = document.getElementById('unclassified-content');
+
+    const movieModal = document.getElementById('movie-modal');
+    const movieForm = document.getElementById('movie-form');
+    const modalHeading = document.getElementById('modal-heading');
+    const tmdbSearchContainer = document.getElementById('tmdb-search-container');
+    const btnDeleteMovie = document.getElementById('btn-delete-movie');
+
+    const apiModal = document.getElementById('api-modal');
+    const inputApiKey = document.getElementById('input-api-key');
+
+    // Initialize Application
+    function init() {
+      // 1. Populate Year Select (2000 ~ 2026)
+      for (let y = 2026; y >= 2000; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `${y}년`;
+        yearSelect.appendChild(opt);
+      }
+      yearSelect.value = currentYear;
+
+      // 2. Load LocalStorage Data
+      loadData();
+
+      // 3. Setup Today Date Display
+      const today = new Date().toISOString().split('T')[0];
+      boardDate.textContent = `작성일: ${today}`;
+
+      // 4. Attach Event Listeners
+      setupEventListeners();
+
+      // 5. Render Board
+      render();
+    }
+
+    // Load Data from LocalStorage
+    function loadData() {
+      const storedMovies = localStorage.getItem('tier_movies');
+      if (storedMovies) {
+        movies = JSON.parse(storedMovies);
+      } else {
+        movies = [...SAMPLE_MOVIES];
+        saveData();
+      }
+
+      const storedApiKey = localStorage.getItem('tmdb_api_key');
+      if (storedApiKey) {
+        tmdbApiKey = storedApiKey;
+        inputApiKey.value = tmdbApiKey;
+      }
+    }
+
+    // Save Data to LocalStorage
+    function saveData() {
+      localStorage.setItem('tier_movies', JSON.stringify(movies));
+    }
+
+    // Render Tier Board & Cards
+    function render() {
+      // Update Board Title
+      boardTitle.value = `${currentYear}년 영화 명작 티어리스트`;
+
+      // Clear all tier containers
+      document.querySelectorAll('.tier-content').forEach(c => c.innerHTML = '');
+
+      // Filter movies for current selected target year
+      const yearMovies = movies.filter(m => m.targetYear == currentYear);
+
+      yearMovies.forEach(movie => {
+        const card = createMovieCard(movie);
+
+        if (movie.tier && movie.tier !== '미분류') {
+          const row = document.querySelector(`.tier-row[data-tier="${movie.tier}"] .tier-content`);
+          if (row) row.appendChild(card);
+          else unclassifiedContent.appendChild(card);
+        } else {
+          unclassifiedContent.appendChild(card);
+        }
+      });
+    }
+
+    // Create Movie Card DOM
+    function createMovieCard(movie) {
+      const card = document.createElement('div');
+      card.className = 'movie-card';
+      card.draggable = true;
+      card.dataset.id = movie.id;
+
+      const stars = '★'.repeat(Math.round(movie.rating || 0));
+
+      card.innerHTML = `
+        <img src="${movie.posterUrl || 'https://via.placeholder.com/150x210?text=No+Image'}" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/150x210?text=No+Image'">
+        <div class="card-info-badge">
+          <div>${movie.title}</div>
+          <div class="rating-stars">${stars} (${movie.rating})</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-mini btn-move-left" title="왼쪽/위로 이동">◀</button>
+          <button class="btn-mini btn-move-right" title="오른쪽/아래로 이동">▶</button>
+        </div>
+      `;
+
+      // Drag & Drop Handlers
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', movie.id);
+        card.style.opacity = '0.5';
+      });
+
+      card.addEventListener('dragend', () => {
+        card.style.opacity = '1';
+      });
+
+      // Click to Edit
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-mini')) return; // Ignore order buttons
+        openEditMovieModal(movie);
+      });
+
+      // Move Left/Right (Reorder within tier)
+      card.querySelector('.btn-move-left').addEventListener('click', (e) => {
+        e.stopPropagation();
+        moveCardOrder(movie.id, -1);
+      });
+
+      card.querySelector('.btn-move-right').addEventListener('click', (e) => {
+        e.stopPropagation();
+        moveCardOrder(movie.id, 1);
+      });
+
+      return card;
+    }
+
+    // Move Card Position inside same Tier
+    function moveCardOrder(movieId, direction) {
+      const yearMovies = movies.filter(m => m.targetYear == currentYear);
+      const targetIndex = movies.findIndex(m => m.id === movieId);
+      if (targetIndex === -1) return;
+
+      const currentTier = movies[targetIndex].tier;
+      const sameTierMovies = yearMovies.filter(m => m.tier === currentTier);
+      const tierIndex = sameTierMovies.findIndex(m => m.id === movieId);
+
+      if (tierIndex + direction >= 0 && tierIndex + direction < sameTierMovies.length) {
+        const swapTargetId = sameTierMovies[tierIndex + direction].id;
+        const swapIndex = movies.findIndex(m => m.id === swapTargetId);
+
+        // Swap in main array
+        const temp = movies[targetIndex];
+        movies[targetIndex] = movies[swapIndex];
+        movies[swapIndex] = temp;
+
+        saveData();
+        render();
+      }
+    }
+
+    // Setup Event Listeners
+    function setupEventListeners() {
+      // Year Select Change
+      yearSelect.addEventListener('change', (e) => {
+        currentYear = parseInt(e.target.value);
+        render();
+      });
+
+      // Drag Over & Drop on Tier Areas
+      document.querySelectorAll('.tier-content').forEach(container => {
+        container.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          container.classList.add('drag-over');
+        });
+
+        container.addEventListener('dragleave', () => {
+          container.classList.remove('drag-over');
+        });
+
+        container.addEventListener('drop', (e) => {
+          e.preventDefault();
+          container.classList.remove('drag-over');
+          const movieId = e.dataTransfer.getData('text/plain');
+
+          const tierRow = container.closest('.tier-row');
+          const newTier = tierRow ? tierRow.dataset.tier : '미분류';
+
+          const movie = movies.find(m => m.id === movieId);
+          if (movie) {
+            movie.tier = newTier;
+            saveData();
+            render();
+          }
+        });
+      });
+
+      // Add Movie Button
+      document.getElementById('btn-add-movie').addEventListener('click', () => {
+        openAddMovieModal();
+      });
+
+      // Modal Controls
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+
+      movieForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveMovieFromForm();
+      });
+
+      btnDeleteMovie.addEventListener('click', () => {
+        const id = document.getElementById('movie-id').value;
+        if (id && confirm('이 영화를 삭제하시겠습니까?')) {
+          movies = movies.filter(m => m.id !== id);
+          saveData();
+          render();
+          closeModal();
+        }
+      });
+
+      // API Key Modal Controls
+      document.getElementById('btn-api-key').addEventListener('click', () => {
+        apiModal.classList.add('active');
+      });
+      document.getElementById('api-modal-close').addEventListener('click', () => {
+        apiModal.classList.remove('active');
+      });
+      document.getElementById('btn-save-api-key').addEventListener('click', () => {
+        tmdbApiKey = inputApiKey.value.trim();
+        localStorage.setItem('tmdb_api_key', tmdbApiKey);
+        alert('TMDB API Key가 저장되었습니다.');
+        apiModal.classList.remove('active');
+      });
+
+      // TMDB Search Trigger
+      document.getElementById('btn-search-tmdb').addEventListener('click', searchTMDB);
+
+      // Export Image (Capture Tier Board Only with Black Background)
+      document.getElementById('btn-export-img').addEventListener('click', exportBoardImage);
+
+      // Reset Data Button
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        if (confirm('모든 데이터를 초기 샘플 데이터 상태로 초기화하시겠습니까?')) {
+          localStorage.removeItem('tier_movies');
+          movies = [...SAMPLE_MOVIES];
+          saveData();
+          render();
+        }
+      });
+    }
+
+    // Open Modal for Adding Movie
+    function openAddMovieModal() {
+      modalHeading.textContent = '신규 영화 추가';
+      movieForm.reset();
+      document.getElementById('movie-id').value = '';
+      document.getElementById('form-year').value = currentYear;
+      document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+      tmdbSearchContainer.style.display = 'block';
+      btnDeleteMovie.style.display = 'none';
+      document.getElementById('search-results').style.display = 'none';
+      movieModal.classList.add('active');
+    }
+
+    // Open Modal for Editing Movie
+    function openEditMovieModal(movie) {
+      modalHeading.textContent = '영화 정보 수정';
+      document.getElementById('movie-id').value = movie.id;
+      document.getElementById('form-title').value = movie.title;
+      document.getElementById('form-year').value = movie.releaseYear || currentYear;
+      document.getElementById('form-director').value = movie.director || '';
+      document.getElementById('form-poster').value = movie.posterUrl || '';
+      document.getElementById('form-rating').value = movie.rating || 4.0;
+      document.getElementById('form-date').value = movie.watchDate || '';
+      document.getElementById('form-review').value = movie.review || '';
+
+      tmdbSearchContainer.style.display = 'none';
+      btnDeleteMovie.style.display = 'block';
+      movieModal.classList.add('active');
+    }
+
+    function closeModal() {
+      movieModal.classList.remove('active');
+    }
+
+    // Save Movie Form Submission
+    function saveMovieFromForm() {
+      const id = document.getElementById('movie-id').value;
+      const title = document.getElementById('form-title').value.trim();
+      const releaseYear = parseInt(document.getElementById('form-year').value) || currentYear;
+      const director = document.getElementById('form-director').value.trim();
+      const posterUrl = document.getElementById('form-poster').value.trim();
+      const rating = parseFloat(document.getElementById('form-rating').value) || 0;
+      const watchDate = document.getElementById('form-date').value;
+      const review = document.getElementById('form-review').value.trim();
+
+      if (id) {
+        // Edit existing
+        const movie = movies.find(m => m.id === id);
+        if (movie) {
+          movie.title = title;
+          movie.releaseYear = releaseYear;
+          movie.director = director;
+          movie.posterUrl = posterUrl;
+          movie.rating = rating;
+          movie.watchDate = watchDate;
+          movie.review = review;
+        }
+      } else {
+        // Add new
+        const newMovie = {
+          id: 'm-' + Date.now(),
+          targetYear: currentYear,
+          title,
+          releaseYear,
+          director,
+          posterUrl,
+          rating,
+          watchDate,
+          review,
+          tier: '미분류'
+        };
+        movies.push(newMovie);
+      }
+
+      saveData();
+      render();
+      closeModal();
+    }
+
+    // TMDB API Search
+    async function searchTMDB() {
+      const query = document.getElementById('api-search-query').value.trim();
+      const resultsContainer = document.getElementById('search-results');
+
+      if (!query) {
+        alert('검색어를 입력해주세요.');
+        return;
+      }
+
+      if (!tmdbApiKey) {
+        alert('TMDB API Key가 설정되지 않았습니다. 상단 "🔑 TMDB API 설정"에서 Key를 먼저 입력해주세요.');
+        return;
+      }
+
+      resultsContainer.style.display = 'block';
+      resultsContainer.innerHTML = '<div style="padding:10px; font-size:0.85rem; color:#aaa;">검색 중...</div>';
+
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&language=ko-KR&query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        if (data.results && data.results.length > 0) {
+          resultsContainer.innerHTML = '';
+          data.results.slice(0, 5).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'search-item';
+            const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : 'https://via.placeholder.com/150x210?text=No+Image';
+            const releaseYear = item.release_date ? item.release_date.split('-')[0] : '';
+
+            div.innerHTML = `
+              <img src="${posterPath}" alt="${item.title}">
+              <div class="search-item-info">
+                <strong>${item.title}</strong> (${releaseYear})
+              </div>
+            `;
+
+            div.addEventListener('click', () => {
+              document.getElementById('form-title').value = item.title;
+              document.getElementById('form-year').value = releaseYear || currentYear;
+              document.getElementById('form-poster').value = posterPath;
+              resultsContainer.style.display = 'none';
+            });
+
+            resultsContainer.appendChild(div);
+          });
+        } else {
+          resultsContainer.innerHTML = '<div style="padding:10px; font-size:0.85rem; color:#aaa;">검색 결과가 없습니다.</div>';
+        }
+      } catch (err) {
+        resultsContainer.innerHTML = '<div style="padding:10px; font-size:0.85rem; color:#ff6b6b;">검색 중 오류 발생. API Key를 확인하세요.</div>';
+      }
+    }
+
+    // Export Capture Area to Image (Solid Black Background, Tier Board Only)
+    function exportBoardImage() {
+      const captureArea = document.getElementById('capture-area');
+      
+      html2canvas(captureArea, {
+        backgroundColor: '#121212',
+        scale: 2 // High DPI
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `${boardTitle.value || '영화_티어리스트'}_${currentYear}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    // Run on Load
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
